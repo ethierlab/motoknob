@@ -35,7 +35,7 @@ varNames = {'start_time', 'init_thresh', 'hit_thresh','angle',...
         'hold_time', 'duration', 'success', 'peak'};
 trial_table = table('Size',sz,'VariableTypes',varTypes,'VariableNames',varNames);
 trial_table = addprop(trial_table,{'ver','num_rewards','num_trials','start_time','mean_peak'},{'table','table','table','table','table'});
-trial_table.Properties.CustomProperties.ver = 0.9;
+trial_table.Properties.CustomProperties.ver = 0.9; 
 trial_table.Properties.CustomProperties.start_time = start_time;
 
 % % wait until user is ready to start
