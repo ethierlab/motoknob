@@ -38,7 +38,6 @@ trial_table = addprop(trial_table,{'ver','num_rewards','num_trials','start_time'
 trial_table.Properties.CustomProperties.ver = 0.9;
 trial_table.Properties.CustomProperties.start_time = start_time;
 
-
 % % wait until user is ready to start
 % uiwait(msgbox('Click OK when ready to start!','Ready?','modal'));
 
@@ -278,8 +277,6 @@ if strcmp(SaveButton,'Yes')
          fname = [app.rat_id.Value,'_MotoTrak_Knob_Results_',datestr(datetime('now'),'yyyymmdd_HHMMSS'),'.mat'];
          save(fullfile(app.save_dir.Value,app.rat_id.Value,fname),'trial_table');
         disp('behavior stats and parameters saved successfully');
-
-
     else
         disp('behavior stats and parameters not saved');
     end
