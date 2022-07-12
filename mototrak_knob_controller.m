@@ -227,37 +227,6 @@ try
     trial_table.Properties.CustomProperties.rat_id      = app.rat_id.Value;
     display_results(time_now,num_trials,num_rewards,app.num_pellets,app.man_pellets,mpeak);
     save_results(app,trial_table,crashed);
-
-    %% memory global_stats automatically saved when session ended            
-    folder = uigetdir('C:\Users\ethie\OneDrive\Documents\temp_data', 'Choose Rat');      
-    [filepath,name,ext] = fileparts(folder);                                    
-
-    D = dir([folder '\*.mat']);                                                 
-
-    numfich = size(D,1);
-    trial_table.Properties.CustomProperties.rat_id = app.rat_id.Value;
-
-
-        for i = 1:numfich
-            load(fullfile(D(i).folder,D(i).name));
-
-            mean_peak(i) = trial_table.Properties.CustomProperties.mean_peak;
-            num_rewards(i) = trial_table.Properties.CustomProperties.num_rewards;
-            num_trials(i)= trial_table.Properties.CustomProperties.num_trials;
-            start_time(i) = trial_table.Properties.CustomProperties.start_time;
-
-            initial_hit_thresh(i) = trial_table.hit_thresh(1);
-            last_hit_thresh(i) = trial_table.hit_thresh(end);
-
-            global_stats = table (start_time',num_trials',num_rewards',mean_peak',initial_hit_thresh', last_hit_thresh');
-            global_stats.Properties.VariableNames = {'Start time','Number of reward','Number of trials','Mean Peak','Initial_hit_thresh','Last_hit_thresh'};
-            cd(folder);
-            filename = [app.rat_id.Value,'global_stats','.mat'];
-            save(filename,'global_stats');
-
-
-        end
- 
     
 catch ME
     disp('MotoTrak crashed...');
@@ -266,12 +235,11 @@ catch ME
     mpeak = mean(trial_table.peak);
     trial_table.Properties.CustomProperties.num_trials  = num_trials;
     trial_table.Properties.CustomProperties.num_rewards = num_rewards;
+    trial_table.Properties.CustomProperties.mean_peak   = mpeak;
     trial_table.Properties.CustomProperties.rat_id      = app.rat_id.Value;
-    display_results(time_now,num_trials,num_rewards,app.num_pellets,app.man_pellets,a);
+    display_results(time_now,num_trials,num_rewards,app.num_pellets,app.man_pellets,mpeak);
     save_results(app,trial_table,crashed);
     rethrow(ME);
-end
-
 end
 
 function display_results(time,trials,rew,pel,manpel,mpeak)
@@ -304,15 +272,20 @@ if strcmp(SaveButton,'Yes')
         if ~dir_exist
             disp('Failed to create new folder in specifiec location');
         end
+
     end
     
     if dir_exist
          fname = [app.rat_id.Value,'_MotoTrak_Knob_Results_',datestr(datetime('now'),'yyyymmdd_HHMMSS'),'.mat'];
          save(fullfile(app.save_dir.Value,app.rat_id.Value,fname),'trial_table');
         disp('behavior stats and parameters saved successfully');
+
+        update_global_stats(app.rat_id.Value,app.save_dir.Value,trial_table);
     else
         disp('behavior stats and parameters not saved');
     end
+
+end
 end
 
 end
