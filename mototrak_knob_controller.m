@@ -246,7 +246,7 @@ function display_results(time,trials,rew,pel,manpel,mpeak)
     fprintf('duration: %s\n\n',datestr(time/86400,'HH:MM:SS'));
     disp('result summary:');
     disp('trials  rewards  pellets');
-    fprintf('%d\t\t%d\t\t%d\n',trials, rew, pel);
+    fprintf('%d\t\t%d\t\t%d\n',trials, rew, pel+manpel);
     fprintf('manual feeding: %d pellets\n', manpel);
     fprintf('total pellets: %d (%.2f g)\n', pel+manpel, (pel+manpel)*0.045);
     fprintf('Mean Peak Angle : %.0f deg\n', mpeak);
@@ -280,7 +280,7 @@ if strcmp(SaveButton,'Yes')
          save(fullfile(app.save_dir.Value,app.rat_id.Value,fname),'trial_table');
         disp('behavior stats and parameters saved successfully');
 
-        update_global_stats(app.rat_id.Value,app.save_dir.Value,trial_table);
+        update_global_stats(app.rat_id.Value,app.save_dir.Value,trial_table,app.hit_thresh.Value);
     else
         disp('behavior stats and parameters not saved');
     end
