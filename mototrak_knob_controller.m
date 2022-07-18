@@ -280,7 +280,7 @@ if strcmp(SaveButton,'Yes')
          save(fullfile(app.save_dir.Value,app.rat_id.Value,fname),'trial_table');
         disp('behavior stats and parameters saved successfully');
 
-        update_global_stats(app.rat_id.Value,app.save_dir.Value,trial_table,app.hit_thresh.Value);
+        update_global_stats(app,trial_table);
     else
         disp('behavior stats and parameters not saved');
     end
