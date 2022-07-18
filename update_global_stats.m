@@ -31,7 +31,7 @@ end
 
     %Create table with updated information
     up_global_stats = table (start_time,num_trials,num_rewards,mean_peak,initial_hit_thresh,app.hit_thresh.Value,app.knob_pos.Value,app.hit_window.Value,app.adapt_hit_thresh.Value,hit_thresh_min,hit_thresh_max);
-    up_global_stats.Properties.VariableNames = {'Start_time','Number_of_trials','Number_of_reward','Mean_Peak','Initial_hit_thresh','Last_hit_thresh','Knob_position','Hit_window','Adaptive','Adapt_hit_min_thresh','Adapt_hit_max_thresh'};
+    up_global_stats.Properties.VariableNames = {'Start_time','Number_trials','Number_rewards','Mean_Peak','Initial_hit_thresh','Last_hit_thresh','Knob_position','Hit_window','Adaptive','Adapt_hit_min_thresh','Adapt_hit_max_thresh'};
 
 if ~exist([app.save_dir.Value filesep app.rat_id.Value], 'dir')
     disp(['A folder was not found for the rat ' app.rat_id.Value]);
