@@ -194,7 +194,6 @@ try
                         if app.hit_thresh.Value <= app.hit_thresh_max.Value
                             app.hit_thresh.Value = min(app.hit_thresh_max.Value, app.hit_thresh.Value+2);
                             update_lines_in_fig(app);
-                            disp('hit thresh was decreased');
                             fprintf('-> more than 70%% success rate, increased Hit Threshold to %.0f deg\n', app.hit_thresh.Value);
                         end
                     end
