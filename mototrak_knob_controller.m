@@ -154,6 +154,7 @@ try
                     if app.adapt_hit_thresh.Value && sum(past_10_trials_succ)<=4
                         % less than 50% success rate, decrease hit threshold by 2 deg.
                         app.hit_thresh.Value = max(app.hit_thresh_min.Value,app.hit_thresh.Value -2);
+                        update_lines_in_fig(app);
                         fprintf('-> less than 50%% success rate, reduced Hit Threshold to %.0f deg\n', app.hit_thresh.Value);
                     end
                     fprintf('\n');
@@ -193,6 +194,7 @@ try
                         if app.hit_thresh.Value <= app.hit_thresh_max.Value
                             app.hit_thresh.Value = min(app.hit_thresh_max.Value, app.hit_thresh.Value+2);
                             update_lines_in_fig(app);
+                            disp('hit thresh was decreased');
                             fprintf('-> more than 70%% success rate, increased Hit Threshold to %.0f deg\n', app.hit_thresh.Value);
                         end
                     end
