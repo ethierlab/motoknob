@@ -29,14 +29,14 @@ start_time  = datetime('now');
 
        
 % pre-allocate table with 500 trials to save trial-based results
-sz = [500 8];
+sz = [500 9];
 varTypes = {'doubleNaN','doubleNaN','doubleNaN','cell',...
-        'doubleNaN','doubleNaN','logical','doubleNaN'};
+        'doubleNaN','doubleNaN','logical','doubleNaN','logical'};
 varNames = {'start_time', 'init_thresh', 'hit_thresh','angle',...
-        'hold_time', 'duration', 'success', 'peak'};
+        'hold_time', 'duration', 'success', 'peak','stim'};
 trial_table = table('Size',sz,'VariableTypes',varTypes,'VariableNames',varNames);
 trial_table = addprop(trial_table,{'ver','num_rewards','num_trials','start_time','mean_peak','rat_id'},{'table','table','table','table','table','table'});
-trial_table.Properties.CustomProperties.ver = 1.0;
+trial_table.Properties.CustomProperties.ver = 1.1;
 trial_table.Properties.CustomProperties.start_time = start_time;
 
 % % wait until user is ready to start
@@ -46,6 +46,9 @@ trial_table.Properties.CustomProperties.start_time = start_time;
 tmp_angle_buffer   = [nan nan]; % [time angle], first row is oldest data
 trial_angle_buffer = [nan nan]; % [time angle]
 past_10_trials_succ= false(1,10);
+past_10_trials_peak= nan(1,10);
+
+%current_median_peak = nan;
 trial_started      = false;
 post_trial_pause   = false;
 current_hold_time  = nan;
@@ -54,6 +57,7 @@ current_init_thresh= nan;
 send_pellets       = 0;
 angle_now          = 0;
 peak_angle         = 0;
+stim               = false;
 success            = false;
 crashed            = false;
 
@@ -89,6 +93,7 @@ try
             trial_start_time    = time_now;
             current_hold_time   = app.hold_time.Value;
             current_hit_thresh  = app.hit_thresh.Value;
+            %current_median_peak  = app.median_peak.Value;
             current_init_thresh = app.init_thresh.Value; 
             peak_angle          = angle_now; % don't consider possible higher pre-trial peaks
             
@@ -113,24 +118,46 @@ try
                 'YData',trial_angle_buffer(:,2));
             ymax = max(app.hit_thresh.Value, peak_angle)*1.25;
             ylim(app.KnobAngleAxes,[-5 ymax]);
-            
+                        
             if post_trial_pause 
+                % stimulate VTA if conditions are met
+                if angle_now > app.Median_peak && ~stim
+                    % stimulate VTA
+                    stim = true;
+                    %current_median_peak = past_10_trials_peak_median
+                    app.moto.trigger_stim();
+                    disp('stimulating!!!');
+                    fprintf('angle_now = %.1f', angle_now);
+                end
+                
                 if trial_time-trial_end_time > app.pause_duration && ~send_pellets 
                     %Executes once after pause is over, trial is over. fill result table and start new trial
                     trial_table(num_trials,:) = {trial_start_time, current_init_thresh, current_hit_thresh, trial_angle_buffer,...
-                        current_hold_time, trial_end_time, success, peak_angle};
+                        current_hold_time, trial_end_time, success, peak_angle, stim};
                     
+                    % temp
+                    fprintf('peak_angle = %.1f\n',peak_angle);
+                    fprintf('median = %.1f\n', app.Median_peak);
+                    fprintf('stim = %g\n', stim);
+                    %%%%%
+        
                     %reset trial variables
-                    post_trial_pause   = false;
-                    trial_started      = false;
-                    success            = false;
-                    peak_angle         = 0;
-                    trial_angle_buffer = [nan nan];
+                    past_10_trials_peak = [past_10_trials_peak(2:end) peak_angle];
+                    app.Median_peak     = median(past_10_trials_peak,'omitnan');
+                    app.MedianPeakValueLabel.Text = num2str(app.Median_peak);
+                    post_trial_pause    = false;
+                    trial_started       = false;
+                    success             = false;
+                    peak_angle          = 0;
+                    stim                = false;
+                    trial_angle_buffer  = [nan nan];
                     
                     if num_trials >=500
                         disp('Reached maximum experiment duration (500 trials)');
                         app.stop_session = true;
                     end
+                    
+
                     
                 end
             else
@@ -145,10 +172,10 @@ try
                     
                     past_10_trials_succ = [false past_10_trials_succ(1:end-1)];
                     
-                    % send 2 digital pulses
-                    for i=1:2
-                        app.moto.trigger_stim();
-                    end
+%                     % send 2 digital pulses
+%                     for i=1:2
+%                         app.moto.trigger_stim();
+%                     end
                     
                     %decrease hit_tresh?
                     if app.adapt_hit_thresh.Value && sum(past_10_trials_succ)<=4
@@ -175,8 +202,8 @@ try
                     send_pellets   = 1;
                     past_10_trials_succ = [true past_10_trials_succ(1:end-1)];
                     
-                    %send 1 digital pulse
-                    app.moto.trigger_stim();
+%                     %send 1 digital pulse
+%                     app.moto.trigger_stim();
                     
                     %update stats & update gui
                     num_rewards     = num_rewards+1;
