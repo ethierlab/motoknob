@@ -53,8 +53,14 @@ if exist(filename,'file')
     global_stats.Properties.VariableNames= strrep(global_stats.Properties.VariableNames, ' ', '_'); %If there is a space variable name it replaces by an underscore
     newvar=~ismember(up_global_stats.Properties.VariableNames,global_stats.Properties.VariableNames);
     for i=find(newvar)
-        %if so, add variable to previous table with nan
-        global_stats.(up_global_stats.Properties.VariableNames{i})=nan(size(global_stats,1),1);
+        %if so, add variable to previous table with nan or empty cells,
+        %depending on type of new variable
+        if isa(up_global_stats.(up_global_stats.Properties.VariableNames{i}),'cell')
+            global_stats.(up_global_stats.Properties.VariableNames{i})=cell(size(global_stats,1),1);
+        else
+            % not a cell, probably a double? todo: make sure it is
+            global_stats.(up_global_stats.Properties.VariableNames{i})=nan(size(global_stats,1),1);
+        end
     end
 
     %merge the new table

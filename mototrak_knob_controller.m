@@ -35,7 +35,7 @@ varTypes = {'doubleNaN','doubleNaN','doubleNaN','cell',...
 varNames = {'start_time', 'init_thresh', 'hit_thresh','angle',...
         'hold_time', 'duration', 'success', 'peak','stim'};
 trial_table = table('Size',sz,'VariableTypes',varTypes,'VariableNames',varNames);
-trial_table = addprop(trial_table,{'ver','num_rewards','num_trials','start_time','mean_peak','rat_id'},{'table','table','table','table','table','table'});
+trial_table = addprop(trial_table,{'ver','num_rewards','num_trials','start_time','mean_peak','rat_id','device'},{'table','table','table','table','table','table','table'});
 trial_table.Properties.CustomProperties.ver = 1.1;
 trial_table.Properties.CustomProperties.start_time = start_time;
 
@@ -253,6 +253,7 @@ try
     trial_table.Properties.CustomProperties.num_rewards = num_rewards;
     trial_table.Properties.CustomProperties.mean_peak   = mpeak;
     trial_table.Properties.CustomProperties.rat_id      = app.rat_id.Value;
+    trial_table.Properties.CustomProperties.device      = 'knob';
     display_results(time_now,num_trials,num_rewards,app.num_pellets,app.man_pellets,mpeak);
     save_results(app,trial_table,crashed);
     
@@ -265,6 +266,7 @@ catch ME
     trial_table.Properties.CustomProperties.num_rewards = num_rewards;
     trial_table.Properties.CustomProperties.mean_peak   = mpeak;
     trial_table.Properties.CustomProperties.rat_id      = app.rat_id.Value;
+    trial_table.Properties.CustomProperties.device      = 'knob';
     display_results(time_now,num_trials,num_rewards,app.num_pellets,app.man_pellets,mpeak);
     save_results(app,trial_table,crashed);
     rethrow(ME);
