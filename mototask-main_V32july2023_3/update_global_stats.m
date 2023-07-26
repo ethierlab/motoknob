@@ -30,10 +30,10 @@ num_trials= trial_table.Properties.CustomProperties.num_trials;
 start_time = trial_table.Properties.CustomProperties.start_time;
 initial_hit_thresh = trial_table.hit_thresh(1);
 device = {trial_table.Properties.CustomProperties.device};
-Historical_HT = trial_table.Properties.CustomProperties.Historical_HT;
+
 
 %Create table with updated information
-up_global_stats = table (start_time,num_trials,num_rewards,mean_peak,app.Median_peak,initial_hit_thresh,app.hit_thresh.Value,app.knob_pos.Value,app.hit_window.Value,app.adapt_hit_thresh.Value,hit_thresh_min,hit_thresh_max,device, app.Historical_HT);
+up_global_stats = table (start_time,num_trials,num_rewards,mean_peak,app.Median_peak,initial_hit_thresh,app.hit_thresh.Value,app.knob_pos.Value,app.hit_window.Value,app.adapt_hit_thresh.Value,hit_thresh_min,hit_thresh_max,device, app.Historical_HT.Value);
 up_global_stats.Properties.VariableNames = {'Start_time','Number_trials','Number_rewards','Mean_Peak','Last_median_peak','Initial_hit_thresh','Last_hit_thresh','Knob_position','Hit_window','Adaptive','Adapt_hit_min_thresh','Adapt_hit_max_thresh','device','Historical_HT'};
 
 if ~exist([app.save_dir.Value filesep app.rat_id.Value], 'dir')

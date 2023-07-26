@@ -37,16 +37,13 @@ num_trials = 0;
 start_time = datetime('now');
 % v32
 num_stimulations = 0;
-Historical_HT = 0;
 histo_tolerance = 0;
 failure_tolerance = 0;
-
-% MaxTrialNum = app.MaxTrialNum.Value;
 
 
 
 % pre-allocate table with MaxTrialNum trials to save trial-based results
-sz = [MaxTrialNum 10];
+sz = [app.MaxTrialNum.Value 10];
 varTypes = {'doubleNaN', 'doubleNaN', 'doubleNaN', 'cell',...
     'doubleNaN', 'doubleNaN', 'logical', 'doubleNaN', 'logical','doubleNaN'};
 varNames = {'start_time', 'init_thresh', 'hit_thresh', 'AngleOrForce',...
@@ -56,14 +53,11 @@ trial_table = addprop(trial_table, {'ver', 'num_rewards', 'num_trials','num_stim
 trial_table.Properties.CustomProperties.ver = 1.2;
 trial_table.Properties.CustomProperties.start_time = start_time;
 
-Historical_HT = app.Historical_HT;
-
 % variables for task logics
 tmp_value_buffer = [nan nan]; % [time value], first row is oldest data
 trial_value_buffer = [nan nan]; % [time value]
 past_10_trials_succ = false(1, 10);
 past_10_trials_peak_vect = nan(1, 10);
-past_10_trial_vect = nan(1, 10);
 
 current_hold_time = nan;
 current_hit_thresh = nan;
@@ -78,8 +72,20 @@ trial_started = false;
 post_trial_pause = false;
 behavPulse = false;
 stim = false;
+rand_stim = false;
 success = false;
 crashed = false;
+
+
+switch app.DGToutput
+    case 'DO_behav'
+        behavPulse = true;
+    case 'DO_stim'
+     switch app.StimCond
+        case 'stim_random'
+        rand_stim = true;
+     end
+end
 
 
 experiment_start = tic;
@@ -162,57 +168,26 @@ try
             trial_time = time_now - trial_start_time;
             trial_value_buffer = [trial_value_buffer; trial_time, moduleValue_now];
 
-
+            %%Post trial pause
             if post_trial_pause
-                %%  STIMULATION box
-                switch app.DGToutput
-                    case 'DO_behav'
-                        behavPulse = true;
-                        stim = false;
-                    case 'DO_stim'
-
-                        behavPulse = false;
-                        stim = true;
-
-                        switch app.StimCond
-
-                            case 'stim_conditional' % conditional Stimulation
-
-                                if success && peak_moduleValue > (current_Historical_HT - histo_tolerance)
-                                    app.moto.trigger_stim();
-                                    num_stimulations = num_stimulations + 1; % Increment the number of stimulations
-                                    app.NumStimulationsCounterLabel.Text = num2str(num_stimulations); % Update GUI for the number of stimulations
-                                    disp('Conditional Stimulation...');
-                                    fprintf('peak moduleValue = %.1f', peak_moduleValue);
-                                end
-
-                            case 'stim_random' % Rand
-
-                                RandStimIndex = rand(1);
-                                stimRate = app.StimRate.Value / 100;
-
-                                if RandStimIndex  < stimRate
-                                    app.moto.trigger_stim();
-                                    disp('Random Stimulation...');
-                                    % Update the GUI for the number of stimulations
-                                    num_stimulations = num_stimulations + 1;
-                                    app.NumStimulationsCounterLabel.Text = num2str(num_stimulations);
-                                end
-
-
-                            case 'stim_manual' % Manual
-                                % if Manual, Check if stimulation button pushed
-                                if app.StimOrder
-                                    app.moto.trigger_stim();
-                                    disp('Manual Stimulation...');
-                                    % Update the GUI for the number of stimulations
-                                    num_stimulations = num_stimulations + 1;
-                                    app.NumStimulationsCounterLabel.Text = num2str(num_stimulations);
-                                end
-                        end
+                
+                %  stimulation on random or HT_max trials?
+                if rand_stim
+                    stim = app.StimRate.Value/100 < rand();
+                    if stim
+                        disp('Random Stimulation...');
+                    end
+                end 
+                    
+                if stim
+                    app.moto.trigger_stim();
+                    num_stimulations = num_stimulations + 1; % Increment the number of stimulations
+                    app.NumStimulationsCounterLabel.Text = num2str(num_stimulations); % Update GUI for the number of stimulations
+                    stim = false;
                 end
+                
 
-                %%
+                %% end of post_trial_pause (executes once)
                 if trial_time - trial_end_time > app.pause_duration && ~send_pellets
                     % Execute once after pause is over, trial is over.
                     % Fill results table and start new trial.
@@ -230,7 +205,6 @@ try
 
                     %reset trial variables
                     past_10_trials_peak_vect = [past_10_trials_peak_vect(2:end), peak_moduleValue];
-                    past_10_trial_vect = [past_10_trial_vect(2:end),moduleValue_now];
 
                     app.Median_peak = median(past_10_trials_peak_vect, 'omitnan');
                     past_10_median_peak_vect = [past_10_median_peak_vect(2:end), app.Median_peak];
@@ -252,8 +226,8 @@ try
 
 
             else
+                
                 %%    Failed?
-
                 if trial_time > app.hit_window.Value && moduleValue_now < app.hit_thresh.Value || moduleValue_now <= (peak_moduleValue - failure_tolerance)
 
                     fprintf('trial failed! :(\n');
@@ -285,11 +259,7 @@ try
                 %% SUCCESS?
                 % if at least 'hold_time' &&
                 if trial_time >= current_hold_time &&...
-                        moduleValue_now > median(past_10_trials_peak_vect,'omitnan')
-                    %                 all( trial_value_buffer( trial_value_buffer(:,1)>=trial_time-current_hold_time ,2)>= app.hit_thresh.Value)
-                    %                if trial_time > app.hit_window.Value && moduleValue_now < app.hit_thresh.Value || moduleValue_now <= (peak_moduleValue - failure_tolerance)
-
-                    current_Historical_HT = max(current_Historical_HT, app.Median_peak);
+                                    all( trial_value_buffer( trial_value_buffer(:,1)>=trial_time-current_hold_time ,2)>= app.hit_thresh.Value) % if all values during hold time are above hit thresh
 
 
                     % we have a success
@@ -307,7 +277,7 @@ try
                     if behavPulse
                         for i = 1:app.nPulse_success
                             app.moto.stim();
-                            pause(app.moto.stim_dur+0.01);
+                            pause(app.moto.stim_dur);
                         end
                     end
 
@@ -315,7 +285,7 @@ try
                     num_rewards = num_rewards + 1;
                     app.num_pellets = app.num_pellets + 1;
                     app.PelletsdeliveredCounterLabel.Text = sprintf('%d (%.3f g)', sum(app.num_pellets) + app.man_pellets, (sum(app.num_pellets) + app.man_pellets) * 0.045); %each pellet 45mg
-                    app.Historical_HT = current_Historical_HT;
+
 
                     app.NumRewardsCounterLabel.Text = num2str(num_rewards);
                     app.NumStimulationsCounterLabel.Text = num2str(num_stimulations);
@@ -331,13 +301,23 @@ try
                             app.hit_thresh.Value = min(app.hit_thresh_max.Value, app.hit_thresh_max.Value+2);
                             update_lines_in_fig(app);
                             fprintf('-> Hit Threshold increased to %.0f deg or gram\n', app.hit_thresh.Value);
+                            
+                            % Increase Historical hit thresh max?
+                            app.Historical_HT.Value = max(app.Historical_HT,app.hit_thresh.Value);
                         end
+                    end
+                    
+                    % stim VTA ?
+                    if peak_moduleValue > app.Historical_HT.Value && ~rand_stim                       
+                        stim = true;
+                        disp('Conditional Stimulation...');
+                        fprintf('peak moduleValue = %.1f', peak_moduleValue);
                     end
 
                     fprintf('\n');
                 end % END sucess
 
-            end % END post-trial Pause
+            end % END post-trial Pause if/else
         end % END if trial started
 
         % give pellets when needed
@@ -362,8 +342,8 @@ try
     trial_table.Properties.CustomProperties.mean_peak = mpeak;
     trial_table.Properties.CustomProperties.rat_id = app.rat_id.Value;
     trial_table.Properties.CustomProperties.device = app.module;
-    trial_table.Properties.CustomProperties.Historical_HT = app.Historical_HT;
-    display_results(time_now, num_trials, num_rewards, app.num_pellets, app.man_pellets, mpeak,current_Historical_HT);
+    trial_table.Properties.CustomProperties.Historical_HT = app.Historical_HT.Value;
+    display_results(time_now, num_trials, num_rewards, app.num_pellets, app.man_pellets, mpeak, app.Historical_HT.Value);
     save_results(app, trial_table, crashed);
 
 catch ME
@@ -377,7 +357,7 @@ catch ME
     trial_table.Properties.CustomProperties.rat_id = app.rat_id.Value;
     trial_table.Properties.CustomProperties.device = app.module;
     trial_table.Properties.CustomProperties.Historical_HT = app.Historical_HT;
-    display_results(time_now, num_trials, num_rewards, app.num_pellets, app.man_pellets, mpeak, app.Historical_HT);
+    display_results(time_now, num_trials, num_rewards, app.num_pellets, app.man_pellets, mpeak, app.Historical_HT.Value);
     save_results(app, trial_table, crashed);
     rethrow(ME);
 end
@@ -390,7 +370,7 @@ end
         fprintf('%d\t\t%d\t\t%d\n',trials, rew, pel+manpel);
         fprintf('manual feeding: %d pellets\n', manpel);
         fprintf('total pellets: %d (%.2f g)\n', pel+manpel, (pel+manpel)*0.045);
-        fprintf('current historical HT: %d \n', current_Historical_HT);
+        fprintf('current historical HT max: %d \n', app.Historical_HT.Value);
         fprintf('Mean Peak Value: %.0f deg or gram\n', mpeak);
     end
 
