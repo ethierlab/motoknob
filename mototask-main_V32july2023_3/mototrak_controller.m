@@ -63,7 +63,7 @@ past_10_median_peak_vect = nan(1, 10);
 
 current_hold_time = nan;
 current_hit_thresh = nan;
-current_Historical_HT = nan;
+Historical_HT = nan;
 current_init_thresh = nan;
 send_pellets = 0;
 moduleValue_now = 0;
@@ -139,7 +139,7 @@ try
             current_hold_time = app.hold_time.Value;
             current_hit_thresh = app.hit_thresh.Value;
             current_init_thresh = app.init_thresh.Value;
-            current_Historical_HT = app.Historical_HT;
+            Historical_HT = app.Historical_HT.Value;
 
             histo_tolerance = app.histo_tolerance.Value;
             failure_tolerance = app.failure_tolerance.Value;
@@ -174,7 +174,7 @@ try
                 
                 %  stimulation on random or HT_max trials?
                 if rand_stim
-                    stim = app.randStimRate.Value/100 < rand();
+                    stim = app.randStimRate.Value/100 > rand();
                     if stim
                         disp('Random Stimulation...');
                     end
@@ -195,7 +195,7 @@ try
 
 
                     trial_table(num_trials, :) = {trial_start_time, current_init_thresh, current_hit_thresh, trial_value_buffer, ...
-                        current_hold_time, trial_end_time, success, peak_moduleValue, stim, current_Historical_HT};
+                        current_hold_time, trial_end_time, success, peak_moduleValue, stim, Historical_HT};
 
                     % update angle plot
                     set(app.angle_line, 'XData', trial_value_buffer(:, 1), ...
@@ -210,7 +210,7 @@ try
                     app.Median_peak = median(past_10_trials_peak_vect, 'omitnan');
                     past_10_median_peak_vect = [past_10_median_peak_vect(2:end), app.Median_peak];
                     app.MedianPeakValueLabel.Text = num2str(app.Median_peak);
-                     app.Historical_HTValueLabel.Text = num2str(app.Historical_HT);
+%                      app.Historical_HT.Text = num2str(app.Historical_HT.Value);
                    
                     post_trial_pause = false;
                     trial_started = false;
@@ -252,7 +252,7 @@ try
                     if app.adapt_hit_thresh.Value && sum(past_10_trial_succ) <= 4
                         app.hit_thresh.Value = max(app.hit_thresh_min.Value, app.hit_thresh.Value - 2);
                         update_lines_in_fig(app);
-                        fprintf('-> less than 50%% success rate, reduced Hit Threshold to %.0f deg or gram\n', app.hit_thresh.Value);
+                        fprintf('-> less than 50%% success rate, reduced Hit Threshold to %.0f deg \n', app.hit_thresh.Value);
                     end
                     fprintf('\n');
                 end
@@ -261,10 +261,7 @@ try
                 %% SUCCESS?
                 % if at least 'hold_time' &&
                 if trial_time >= current_hold_time &&...
-                                    all( trial_value_buffer( trial_value_buffer(:,1)>=trial_time-current_hold_time ,2)>= app.hit_thresh.Value) % if all values during hold time are above hit thresh
-%   if trial_time >= current_hold_time &&...
-%           all( trial_value_buffer( trial_value_buffer(:,1)>=trial_time-current_hold_time ,2)>=  median(past_10_trial_peak_vect,'omitnan'))
-
+                    all( trial_value_buffer( trial_value_buffer(:,1)>=trial_time-current_hold_time ,2)>= app.hit_thresh.Value) % if all values during hold time are above hit thresh
 
                     % we have a success
                     fprintf('trial successful! :D\n');
@@ -289,8 +286,6 @@ try
                     num_rewards = num_rewards + 1;
                     app.num_pellets = app.num_pellets + 1;
                     app.PelletsdeliveredCounterLabel.Text = sprintf('%d (%.3f g)', sum(app.num_pellets) + app.man_pellets, (sum(app.num_pellets) + app.man_pellets) * 0.045); %each pellet 45mg
-
-
                     app.NumRewardsCounterLabel.Text = num2str(num_rewards);
                     app.NumStimulationsCounterLabel.Text = num2str(num_stimulations);
 
@@ -307,16 +302,18 @@ try
                             fprintf('-> Hit Threshold increased to %.0f deg\n', app.hit_thresh.Value);
                             
                             % Increase Historical hit thresh max?
-                            app.Historical_HT = max(app.Historical_HT,app.hit_thresh.Value);
+                            app.Historical_HT.Value = max(app.Historical_HT.Value, app.hit_thresh.Value);
                         end
                     end
                     
                     % stim VTA ?
-                    if peak_moduleValue > app.Historical_HT && ~rand_stim                       
+                    if peak_moduleValue >= app.Historical_HT.Value && ~rand_stim && ~behavPulse
+ %                    if moduleValue_now >= app.Historical_HT.Value && ~rand_stim  && ~behavPulse                  
                         stim = true;
                         disp('Conditional Stimulation...');
                         fprintf('peak moduleValue = %.1f', peak_moduleValue);
                     end
+                    
 
                     fprintf('\n');
                 end % END sucess
@@ -346,8 +343,8 @@ try
     trial_table.Properties.CustomProperties.mean_peak = mpeak;
     trial_table.Properties.CustomProperties.rat_id = app.rat_id.Value;
     trial_table.Properties.CustomProperties.device = app.module;
-    trial_table.Properties.CustomProperties.Historical_HT = app.Historical_HT;
-    display_results(time_now, num_trials, num_rewards, app.num_pellets, app.man_pellets, mpeak, app.Historical_HT);
+    trial_table.Properties.CustomProperties.Historical_HT = app.Historical_HT.Value;
+    display_results(time_now, num_trials, num_rewards, app.num_pellets, app.man_pellets, mpeak, app.Historical_HT.Value);
     save_results(app, trial_table, crashed);
 
 catch ME
@@ -360,12 +357,12 @@ catch ME
     trial_table.Properties.CustomProperties.mean_peak = mpeak;
     trial_table.Properties.CustomProperties.rat_id = app.rat_id.Value;
     trial_table.Properties.CustomProperties.device = app.module;
-    trial_table.Properties.CustomProperties.Historical_HT = app.Historical_HT;
-    display_results(time_now, num_trials, num_rewards, app.num_pellets, app.man_pellets, mpeak, app.Historical_HT);
+    trial_table.Properties.CustomProperties.Historical_HT = app.Historical_HT.Value;
+    display_results(time_now, num_trials, num_rewards, app.num_pellets, app.man_pellets, mpeak, app.Historical_HT.Value);
     save_results(app, trial_table, crashed);
     rethrow(ME);
 end
-Historical_HT=app.Historical_HT;
+Historical_HT=app.Historical_HT.Value;
 
     function display_results(time,trials,rew,pel,manpel,mpeak,Historical_HT)
         fprintf('duration: %s\n\n',datestr(time/86400,'HH:MM:SS'));
@@ -375,7 +372,7 @@ Historical_HT=app.Historical_HT;
         fprintf('manual feeding: %d pellets\n', manpel);
         fprintf('total pellets: %d (%.2f g)\n', pel+manpel, (pel+manpel)*0.045);
         fprintf('current historical HT max: %d \n', Historical_HT);
-        fprintf('Mean Peak Value: %.0f deg or gram\n', mpeak);
+        fprintf('Mean Peak Value: %.0f deg \n', mpeak);
     end
 
     function save_results(app, trial_table, crashed)
