@@ -1,4 +1,4 @@
-    function [trial_table, crashed] = mototrak_controller(app)
+function [trial_table, crashed] = mototrak_controller(app)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -15,7 +15,6 @@
 % TODO: Add more details if required.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-warning off
 
 %% Mototrak and sound initialization
 if app.knob_pos.Value > 4 || app.knob_pos.Value < -2
@@ -38,9 +37,6 @@ num_trials = 0;
 start_time = datetime('now');
 % v32
 num_stimulations = 0;
-histo_tolerance = 0;
-failure_tolerance = 0;
-
 
 
 % pre-allocate table with MaxTrialNum trials to save trial-based results
@@ -82,10 +78,10 @@ switch app.DGToutput
         behavPulse = true;
 
     case 'DO_stim'
-     switch app.StimCond
-        case 'stim_random'
-        rand_stim = true;
-     end
+        switch app.StimCond
+            case 'stim_random'
+                rand_stim = true;
+        end
 end
 
 
@@ -141,8 +137,6 @@ try
             current_init_thresh = app.init_thresh.Value;
             Historical_HT = app.Historical_HT.Value;
 
-            histo_tolerance = app.histo_tolerance.Value;
-            failure_tolerance = app.failure_tolerance.Value;
 
 
             disp('Trial initiated... ');
@@ -155,7 +149,7 @@ try
             % Output one digital pulse for onset of trial
             if behavPulse
                 for i = 1:app.nPulse_init.Value
-                    app.moto.stim();
+                    app.moto.stim(1);
                 end
             end
 
@@ -169,24 +163,19 @@ try
             trial_time = time_now - trial_start_time;
             trial_value_buffer = [trial_value_buffer; trial_time, moduleValue_now];
 
-            %%Post trial pause
+            %% Post trial pause
             if post_trial_pause
-                
+
+
                 %  stimulation on random or HT_max trials?
-                if rand_stim
-                    stim = app.randStimRate.Value/100 > rand();
-                    if stim
-                        disp('Random Stimulation...');
-                    end
-                end 
-                    
                 if stim
-                    app.moto.trigger_stim();
+                    %                     && (time_now - last_pellet_time > app.pellets_pause)
+                    app.moto.trigger_stim(1);
                     num_stimulations = num_stimulations + 1; % Increment the number of stimulations
                     app.NumStimulationsCounterLabel.Text = num2str(num_stimulations); % Update GUI for the number of stimulations
                     stim = false;
                 end
-                
+
 
                 %% end of post_trial_pause (executes once)
                 if trial_time - trial_end_time > app.pause_duration && ~send_pellets
@@ -210,8 +199,8 @@ try
                     app.Median_peak = median(past_10_trials_peak_vect, 'omitnan');
                     past_10_median_peak_vect = [past_10_median_peak_vect(2:end), app.Median_peak];
                     app.MedianPeakValueLabel.Text = num2str(app.Median_peak);
-%                      app.Historical_HT.Text = num2str(app.Historical_HT.Value);
-                   
+                    %                      app.Historical_HT.Text = num2str(app.Historical_HT.Value);
+
                     post_trial_pause = false;
                     trial_started = false;
                     success = false;
@@ -227,12 +216,13 @@ try
 
 
             else
-                
+
                 %%    Failed?
-                if trial_time > app.hit_window.Value && moduleValue_now < app.hit_thresh.Value 
-%                         || moduleValue_now <= (peak_moduleValue - failure_tolerance)
+                if trial_time > app.hit_window.Value && moduleValue_now < app.hit_thresh.Value
+                    %                          || moduleValue_now <= (peak_moduleValue - app.failure_tolerance.Value)
 
                     fprintf('trial failed! :(\n');
+                    fprintf('module Value = %.1f', moduleValue_now);
 
                     success = false;
                     post_trial_pause = true;
@@ -244,7 +234,7 @@ try
                     % send 2 digital pulses
                     if behavPulse
                         for i = 1:app.nPulse_fail.Value
-                            app.moto.stim();
+                            app.moto.stim(1);
                         end
                     end
 
@@ -261,7 +251,7 @@ try
                 %% SUCCESS?
                 % if at least 'hold_time' &&
                 if trial_time >= current_hold_time &&...
-                    all( trial_value_buffer( trial_value_buffer(:,1)>=trial_time-current_hold_time ,2)>= app.hit_thresh.Value) % if all values during hold time are above hit thresh
+                        all( trial_value_buffer( trial_value_buffer(:,1)>=trial_time-current_hold_time ,2)>= app.hit_thresh.Value) % if all values during hold time are above hit thresh
 
                     % we have a success
                     fprintf('trial successful! :D\n');
@@ -277,8 +267,8 @@ try
                     % Send 3 digital pulses
                     if behavPulse
                         for i = 1:app.nPulse_success.Value
-                            app.moto.stim();
-%                             pause(app.moto.stim_dur);
+                            app.moto.stim(1);
+                            %                             pause(app.moto.stim_dur);
                         end
                     end
 
@@ -300,25 +290,29 @@ try
                             app.hit_thresh.Value = min(app.hit_thresh_max.Value, app.hit_thresh.Value+2);
                             update_lines_in_fig(app);
                             fprintf('-> Hit Threshold increased to %.0f deg\n', app.hit_thresh.Value);
-                            
+
                             % Increase Historical hit thresh max?
                             app.Historical_HT.Value = max(app.Historical_HT.Value, app.hit_thresh.Value);
                         end
                     end
-                    
-                    % stim VTA ?
-                    if peak_moduleValue >= app.Historical_HT.Value && ~rand_stim && ~behavPulse
- %                    if moduleValue_now >= app.Historical_HT.Value && ~rand_stim  && ~behavPulse                  
-                        stim = true;
-                        disp('Conditional Stimulation...');
-                        fprintf('peak moduleValue = %.1f', peak_moduleValue);
-                    end
-                    
-
                     fprintf('\n');
                 end % END sucess
 
+                % stim VTA ?
+                if ~rand_stim && ~behavPulse && (peak_moduleValue >= (app.Historical_HT.Value - app.histo_tolerance.Value))
+                    stim = true;
+                    disp('Conditional Stimulation...\n');
+                    fprintf('peak moduleValue = %.1f', peak_moduleValue);
+                end
+                if rand_stim
+                    stim = app.randStimRate.Value/100 > rand();
+                    if stim
+                        disp('Random Stimulation...');
+                    end
+                end
+
             end % END post-trial Pause if/else
+
         end % END if trial started
 
         % give pellets when needed
