@@ -15,7 +15,7 @@
 % TODO: Add more details if required.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+warning off
 
 %% Mototrak and sound initialization
 if app.knob_pos.Value > 4 || app.knob_pos.Value < -2
