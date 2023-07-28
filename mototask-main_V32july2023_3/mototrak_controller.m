@@ -45,11 +45,11 @@ varTypes = {'doubleNaN', 'doubleNaN', 'doubleNaN', 'cell',...
     'doubleNaN', 'doubleNaN', 'logical', 'doubleNaN', 'logical','doubleNaN'};
 
 varNames = {'start_time', 'init_thresh', 'hit_thresh', 'AngleOrForce',...
-    'hold_time', 'duration', 'success', 'peak', 'stim','Historical_HT'};
+    'hold_time', 'duration', 'success', 'peak',        'stim','Historical_HT'};
 
 trial_table = table('Size', sz, 'VariableTypes', varTypes, 'VariableNames', varNames);
 
-trial_table = addprop(trial_table, {'ver', 'num_rewards', 'num_trials','num_stimulations', 'start_time', 'mean_peak', 'rat_id', 'device','Historical_HT'}, {'table', 'table', 'table', 'table', 'table', 'table', 'table', 'table', 'table'});
+trial_table = addprop(trial_table, {'ver', 'num_rewards', 'num_trials','num_stimulations', 'start_time', 'mean_peak', 'rat_id', 'device'}, {'table', 'table', 'table', 'table', 'table', 'table', 'table', 'table'});
 trial_table.Properties.CustomProperties.ver = 1.2;
 trial_table.Properties.CustomProperties.start_time = start_time;
 
@@ -202,7 +202,6 @@ try
                     app.Median_peak = median(past_10_trials_peak_vect, 'omitnan');
                     past_10_median_peak_vect = [past_10_median_peak_vect(2:end), app.Median_peak];
                     app.MedianPeakValueLabel.Text = num2str(app.Median_peak);
-                    %                      app.Historical_HT.Text = num2str(app.Historical_HT.Value);
 
                     post_trial_pause = false;
                     trial_started = false;
@@ -294,12 +293,14 @@ try
                             update_lines_in_fig(app);
                             fprintf('-> Hit Threshold increased to %.0f deg\n', app.hit_thresh.Value);
 
-                            % Increase Historical hit thresh max?
-                            app.Historical_HT.Value = max(app.Historical_HT.Value, app.hit_thresh.Value);
+%                             % Increase Historical hit thresh max?
+%                             app.Historical_HT.Value = max(app.Historical_HT.Value, app.hit_thresh.Value);
                         end
                     end
                     fprintf('\n');
                 end % END sucess
+                            % Increase Historical hit thresh max?
+                            app.Historical_HT.Value = max(app.Historical_HT.Value, app.hit_thresh.Value);
 
                 % stim VTA ?
                 if ~rand_stim && ~behavPulse && (peak_moduleValue >= (app.Historical_HT.Value - app.histo_tolerance.Value))
@@ -337,12 +338,11 @@ try
     mpeak = mean(trial_table.peak, 'omitnan');
     trial_table.Properties.CustomProperties.num_trials = num_trials;
     trial_table.Properties.CustomProperties.num_rewards = num_rewards;
-    trial_table.Properties.CustomProperties.num_stimulations = num_stimulations;
+    trial_table.Properties.CustomProperties.num_stimulations = app.num_stimulations;
     trial_table.Properties.CustomProperties.mean_peak = mpeak;
     trial_table.Properties.CustomProperties.rat_id = app.rat_id.Value;
     trial_table.Properties.CustomProperties.device = app.module;
-    trial_table.Properties.CustomProperties.Historical_HT = app.Historical_HT.Value;
-    display_results(time_now, num_trials, num_rewards, num_stimulations, app.num_pellets, app.man_pellets, mpeak, app.Historical_HT.Value);
+    display_results(time_now, num_trials, num_rewards, app.num_stimulations, app.num_pellets, app.man_pellets, mpeak, app.Historical_HT.Value);
     save_results(app, trial_table, crashed);
 
 catch ME
@@ -356,20 +356,21 @@ catch ME
     trial_table.Properties.CustomProperties.rat_id = app.rat_id.Value;
     trial_table.Properties.CustomProperties.device = app.module;
     trial_table.Properties.CustomProperties.Historical_HT = app.Historical_HT.Value;
-    display_results(time_now, num_trials, num_rewards, app.num_pellets, app.man_pellets, mpeak, app.Historical_HT.Value);
+    display_results(time_now, num_trials, num_rewards, app.num_stimulations, app.num_pellets, app.man_pellets, mpeak, app.Historical_HT.Value);
     save_results(app, trial_table, crashed);
     rethrow(ME);
 end
 Historical_HT=app.Historical_HT.Value;
 
-    function display_results(time,trials,rew,pel,manpel,mpeak,Historical_HT)
+    function display_results(time,trials,rew,nStim,pel,manpel,mpeak,Historical_HT)
         fprintf('duration: %s\n\n',datestr(time/86400,'HH:MM:SS'));
         disp('result summary:');
         disp('trials  rewards  pellets');
         fprintf('%d\t\t%d\t\t%d\n',trials, rew, pel+manpel);
         fprintf('manual feeding: %d pellets\n', manpel);
         fprintf('total pellets: %d (%.2f g)\n', pel+manpel, (pel+manpel)*0.045);
-        fprintf('current historical HT max: %d \n', Historical_HT);
+        fprintf('Historical HT: %d \n', Historical_HT);
+        fprintf('total stimulations: %.0f deg \n', nStim);
         fprintf('Mean Peak Value: %.0f deg \n', mpeak);
     end
 

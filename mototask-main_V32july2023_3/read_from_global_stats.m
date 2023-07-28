@@ -1,4 +1,4 @@
-function [last_hit_thresh, last_median_peak, Historical_HT] = read_from_global_stats(rat_id,folder,module)
+function [last_hit_thresh, last_median_peak, historical_HT] = read_from_global_stats(rat_id,folder,module)
 %
 % This function looks for global_stats file in the folder\rat_id
 % folder and returns the last hit threshold it is used to confer
@@ -11,7 +11,7 @@ function [last_hit_thresh, last_median_peak, Historical_HT] = read_from_global_s
 filename = ([folder filesep rat_id filesep rat_id '_global_stats.mat']);
 last_hit_thresh = [];
 last_median_peak = 0;
-Historical_HT = 0;
+historical_HT = 0;
 
 if exist([folder filesep rat_id]) ==7
 
@@ -30,15 +30,12 @@ if exist([folder filesep rat_id]) ==7
                 if any(strcmp('Last_median_peak', global_stats.Properties.VariableNames))
                     last_median_peak = global_stats.Last_median_peak(i);
                 end
-%                 if any(strcmp('Num_stimulations', global_stats.Properties.VariableNames))
-%                     app.num_stimulations = global_stats.Num_stimulations(i);
-%                 end
-                if any(strcmp('Historical_HT', global_stats.Properties.VariableNames))
-                    Historical_HT = global_stats.Historical_HT(i);
-                end
 
             end
 
+        end
+        if any(strcmp('Historical_HT', global_stats.Properties.VariableNames))
+            historical_HT = global_stats.Historical_HT(end);
         end
 
     else
