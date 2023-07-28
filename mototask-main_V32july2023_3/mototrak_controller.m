@@ -119,7 +119,7 @@ try
         while app.pause_session
             drawnow limitrate; % update GUI and force fig
         end
-
+        
         loop_time = toc(loop_timer);
         if loop_time > 0.1
             fprintf('--- WARNING --- \nlong delay in while loop (%.0f ms)\n', loop_time * 1000);
@@ -299,6 +299,7 @@ try
                     end
                     fprintf('\n');
                 end % END sucess
+
                             % Increase Historical hit thresh max?
                             app.Historical_HT.Value = max(app.Historical_HT.Value, app.hit_thresh.Value);
 
