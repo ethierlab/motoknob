@@ -43,9 +43,12 @@ num_stimulations = 0;
 sz = [app.MaxTrialNum.Value 10];
 varTypes = {'doubleNaN', 'doubleNaN', 'doubleNaN', 'cell',...
     'doubleNaN', 'doubleNaN', 'logical', 'doubleNaN', 'logical','doubleNaN'};
+
 varNames = {'start_time', 'init_thresh', 'hit_thresh', 'AngleOrForce',...
     'hold_time', 'duration', 'success', 'peak', 'stim','Historical_HT'};
+
 trial_table = table('Size', sz, 'VariableTypes', varTypes, 'VariableNames', varNames);
+
 trial_table = addprop(trial_table, {'ver', 'num_rewards', 'num_trials','num_stimulations', 'start_time', 'mean_peak', 'rat_id', 'device','Historical_HT'}, {'table', 'table', 'table', 'table', 'table', 'table', 'table', 'table', 'table'});
 trial_table.Properties.CustomProperties.ver = 1.2;
 trial_table.Properties.CustomProperties.start_time = start_time;
@@ -334,11 +337,12 @@ try
     mpeak = mean(trial_table.peak, 'omitnan');
     trial_table.Properties.CustomProperties.num_trials = num_trials;
     trial_table.Properties.CustomProperties.num_rewards = num_rewards;
+    trial_table.Properties.CustomProperties.num_stimulations = num_stimulations;
     trial_table.Properties.CustomProperties.mean_peak = mpeak;
     trial_table.Properties.CustomProperties.rat_id = app.rat_id.Value;
     trial_table.Properties.CustomProperties.device = app.module;
     trial_table.Properties.CustomProperties.Historical_HT = app.Historical_HT.Value;
-    display_results(time_now, num_trials, num_rewards, app.num_pellets, app.man_pellets, mpeak, app.Historical_HT.Value);
+    display_results(time_now, num_trials, num_rewards, num_stimulations, app.num_pellets, app.man_pellets, mpeak, app.Historical_HT.Value);
     save_results(app, trial_table, crashed);
 
 catch ME

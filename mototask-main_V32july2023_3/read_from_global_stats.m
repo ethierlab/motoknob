@@ -24,15 +24,17 @@ if exist([folder filesep rat_id]) ==7
 
         for i = 1:size(global_stats, 1)
             if strcmp(module, global_stats.device{i})
+               
                 last_hit_thresh = global_stats.Last_hit_thresh(i);
+
                 if any(strcmp('Last_median_peak', global_stats.Properties.VariableNames))
-                    app.last_median_peak = global_stats.Last_median_peak(i);
+                    last_median_peak = global_stats.Last_median_peak(i);
                 end
-                if any(strcmp('Num_stimulations', global_stats.Properties.VariableNames))
-                    app.num_stimulations = global_stats.Num_stimulations(i);
-                end
+%                 if any(strcmp('Num_stimulations', global_stats.Properties.VariableNames))
+%                     app.num_stimulations = global_stats.Num_stimulations(i);
+%                 end
                 if any(strcmp('Historical_HT', global_stats.Properties.VariableNames))
-                    app.Historical_HT = global_stats.Historical_HT(i);
+                    Historical_HT = global_stats.Historical_HT(i);
                 end
 
             end
