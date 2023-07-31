@@ -68,6 +68,8 @@ send_pellets = 0;
 moduleValue_now = 0;
 peak_moduleValue = 0;
 
+loop_time = 0;
+
 trial_started = false;
 post_trial_pause = false;
 behavPulse = false;
@@ -90,7 +92,7 @@ end
 
 
 experiment_start = tic;
-% loop_timer = tic;
+ loop_timer = tic;
 last_pellet_time = toc(experiment_start);
 disp('experiment started!')
 
@@ -124,11 +126,11 @@ try
             end
             loop_time = toc(loop_timer);
         end
-        
-        
-        if loop_time > 0.1
-            fprintf('--- WARNING --- \nlong delay in while loop (%.0f ms)\n', loop_time * 1000);
-        end
+%         
+%         
+%         if loop_time > 0.1
+%             fprintf('--- WARNING --- \nlong delay in while loop (%.0f ms)\n', loop_time * 1000);
+%         end
         
 %         time_now = time_now - loop_time;
 
@@ -158,7 +160,7 @@ try
             % Output one digital pulse for onset of trial
             if behavPulse
                 for i = 1:app.nPulse_init.Value
-                    app.moto.stim(1);
+                    app.moto.stim();
                 end
             end
 
@@ -256,7 +258,7 @@ try
                     % send 2 digital pulses
                     if behavPulse
                         for i = 1:app.nPulse_fail.Value
-                            app.moto.stim(1);
+                            app.moto.stim();
                         end
                     end
 
@@ -289,7 +291,7 @@ try
                     % Send 3 digital pulses
                     if behavPulse
                         for i = 1:app.nPulse_success.Value
-                            app.moto.stim(1);
+                            app.moto.stim();
                             %                             pause(app.moto.stim_dur);
                         end
                     end
@@ -360,7 +362,7 @@ catch ME
     trial_table.Properties.CustomProperties.mean_peak = mpeak;
     trial_table.Properties.CustomProperties.rat_id = app.rat_id.Value;
     trial_table.Properties.CustomProperties.device = app.module;
-    trial_table.Properties.CustomProperties.Historical_HT = app.Historical_HT.Value;
+%     trial_table.Properties.CustomProperties.Historical_HT = app.Historical_HT.Value;
     display_results(time_now, num_trials, num_rewards, app.num_stimulations, app.num_pellets, app.man_pellets, mpeak, app.Historical_HT.Value);
     save_results(app, trial_table, crashed);
     rethrow(ME);
