@@ -71,6 +71,7 @@ peak_moduleValue = 0;
 trial_started = false;
 post_trial_pause = false;
 behavPulse = false;
+process_stim = false;
 stim = false;
 rand_stim = false;
 success = false;
@@ -89,7 +90,7 @@ end
 
 
 experiment_start = tic;
-loop_timer = tic;
+% loop_timer = tic;
 last_pellet_time = toc(experiment_start);
 disp('experiment started!')
 
@@ -116,15 +117,20 @@ try
         % warn if longer than expected loop delays
 
         %% Pause Loop
-        while app.pause_session
-            drawnow limitrate; % update GUI and force fig
+        if app.pause_session
+            loop_timer = tic;
+            while app.pause_session
+                drawnow limitrate; % update GUI and force fig
+            end
+            loop_time = toc(loop_timer);
         end
         
-        loop_time = toc(loop_timer);
+        
         if loop_time > 0.1
             fprintf('--- WARNING --- \nlong delay in while loop (%.0f ms)\n', loop_time * 1000);
         end
-        loop_timer = tic;
+        
+%         time_now = time_now - loop_time;
 
 
         %% trial initiation
@@ -168,17 +174,30 @@ try
 
             %% Post trial pause
             if post_trial_pause
+    
+                if ~process_stim
+                    % stim VTA ?
+                    if ~rand_stim && ~behavPulse && (peak_moduleValue >= (app.Historical_HT.Value - app.histo_tolerance.Value))
+                        stim = true;
+                        disp('Conditional Stimulation...\n');
+                        fprintf('peak moduleValue = %.1f', peak_moduleValue);
+                    end
+                    if rand_stim
+                        stim = app.randStimRate.Value/100 > rand(); %set stim=true if generated rand() was less than StimRate
+                        if stim
+                            disp('Random Stimulation...');
+                        end
+                    end
 
-
-                %  stimulation on random or HT_max trials?
-                if stim
-                    %                     && (time_now - last_pellet_time > app.pellets_pause)
-                    app.moto.trigger_stim(1);
-                    num_stimulations = num_stimulations + 1; % Increment the number of stimulations
-                    app.NumStimulationsCounterLabel.Text = num2str(num_stimulations); % Update GUI for the number of stimulations
-                    stim = false;
+                    %  stimulation on random or HT_max trials?
+                    if stim
+                        app.moto.trigger_stim(1);
+                        num_stimulations = num_stimulations + 1; % Increment the number of stimulations
+                        app.NumStimulationsCounterLabel.Text = num2str(num_stimulations); % Update GUI for the number of stimulations
+                        stim = false;
+                    end
+                    process_stim = true;
                 end
-
 
                 %% end of post_trial_pause (executes once)
                 if trial_time - trial_end_time > app.pause_duration && ~send_pellets
@@ -208,6 +227,7 @@ try
                     success = false;
                     peak_moduleValue = 0;
                     stim = false;
+                    process_stim = false;
                     trial_value_buffer = [nan nan];
 
                     if num_trials > app.MaxTrialNum.Value
@@ -293,28 +313,12 @@ try
                             update_lines_in_fig(app);
                             fprintf('-> Hit Threshold increased to %.0f deg\n', app.hit_thresh.Value);
 
-%                             % Increase Historical hit thresh max?
-%                             app.Historical_HT.Value = max(app.Historical_HT.Value, app.hit_thresh.Value);
+                            % Increase Historical hit thresh max?
+                            app.Historical_HT.Value = max(app.Historical_HT.Value, app.hit_thresh.Value);
                         end
                     end
                     fprintf('\n');
                 end % END sucess
-
-                            % Increase Historical hit thresh max?
-                            app.Historical_HT.Value = max(app.Historical_HT.Value, app.hit_thresh.Value);
-
-                % stim VTA ?
-                if ~rand_stim && ~behavPulse && (peak_moduleValue >= (app.Historical_HT.Value - app.histo_tolerance.Value))
-                    stim = true;
-                    disp('Conditional Stimulation...\n');
-                    fprintf('peak moduleValue = %.1f', peak_moduleValue);
-                end
-                if rand_stim
-                    stim = app.randStimRate.Value/100 > rand();
-                    if stim
-                        disp('Random Stimulation...');
-                    end
-                end
 
             end % END post-trial Pause if/else
 
@@ -328,7 +332,7 @@ try
         end
 
         % update time
-        app.TimeelapsedCounterLabel.Text = datestr(time_now / 86400, 'HH:MM:SS');
+        app.TimeelapsedCounterLabel.Text = datestr((time_now-loop_time) / 86400, 'HH:MM:SS');
 
         drawnow limitrate; % update GUI and force fig
 
