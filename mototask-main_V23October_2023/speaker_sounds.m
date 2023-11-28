@@ -23,7 +23,7 @@ end
 
 %find speaker device
 sound_devs=audiodevinfo;
-speak_dev_idx = find(strncmpi({sound_devs.output.Name},'Realtek',7),1,'first');
+speak_dev_idx = find(strncmpi({sound_devs.output.Name},'Speaker',7),1,'first');
 sound_dev_id = sound_devs.output(speak_dev_idx).ID;
 
 sounds = cell(num_sounds,1);
